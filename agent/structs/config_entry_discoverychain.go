@@ -471,6 +471,8 @@ type ServiceRouteDestination struct {
 	// Allow HTTP header manipulation to be configured.
 	RequestHeaders  *HTTPHeaderModifiers `json:",omitempty" alias:"request_headers"`
 	ResponseHeaders *HTTPHeaderModifiers `json:",omitempty" alias:"response_headers"`
+
+	RequestRedirect string
 }
 
 func (e *ServiceRouteDestination) MarshalJSON() ([]byte, error) {

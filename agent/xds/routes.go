@@ -653,8 +653,9 @@ func (s *ResourceGenerator) makeUpstreamRouteForDiscoveryChain(
 			routeMatch := makeRouteMatchForDiscoveryRoute(discoveryRoute)
 
 			var (
-				routeAction *envoy_route_v3.Route_Route
-				err         error
+				routeAction    *envoy_route_v3.Route_Route
+				redirectAction *envoy_route_v3.Route_Redirect
+				err            error
 			)
 
 			nextNode := chain.Nodes[discoveryRoute.NextNode]
@@ -720,14 +721,31 @@ func (s *ResourceGenerator) makeUpstreamRouteForDiscoveryChain(
 				if err := injectHeaderManipToRoute(destination, route); err != nil {
 					return nil, fmt.Errorf("failed to apply header manipulation configuration to route: %v", err)
 				}
+
+				s.Logger.Debug("melisa ----------- destination.requestRedirect", destination.RequestRedirect)
+				if destination.RequestRedirect != "" {
+					s.Logger.Debug("melisa ----------- destination.requestRedirect was not empty")
+
+					redirectAction = &envoy_route_v3.Route_Redirect{
+						Redirect: &envoy_route_v3.RedirectAction{
+							HostRedirect: destination.RequestRedirect,
+						},
+					}
+				}
+
 			}
 
+			// Melisa
 			filter, err := filterBuilder.buildTypedPerFilterConfig(routeMatch, routeAction)
 			if err != nil {
 				return nil, err
 			}
 			route.Match = routeMatch
-			route.Action = routeAction
+			if redirectAction != nil {
+				route.Action = redirectAction
+			} else {
+				route.Action = routeAction
+			}
 			route.TypedPerFilterConfig = filter
 
 			routes = append(routes, route)
